@@ -1,4 +1,4 @@
-# 📄 デュエメイト 仕様書（MVP版）
+# 📄 デュエメイト 仕様書（MVP版・修正版）
 
 ---
 
@@ -41,7 +41,7 @@
 ### ・マイページ
 
 * レーティング表示
-* 試合数・戦績表示
+* 試合数・戦績表示（confirmed試合のみ）
 
 ### ・対戦記録画面
 
@@ -52,15 +52,15 @@
 
 ## ■ 4. 対戦フロー（重要）
 
-```text
 ① 対戦作成
 ↓
-② 各プレイヤーが結果入力
+② 各プレイヤーが「自分の結果のみ」入力（1人1回まで）
 ↓
 ③ 判定
-　・一致 → 確定
-　・不一致 → disputed
-```
+
+* 一致 → confirmed（確定）
+* 不一致 → disputed
+* 両者invalid → cancelled
 
 ---
 
@@ -73,6 +73,9 @@
 * draw（引き分け）
 * invalid（無効試合）
 
+※ ログインユーザーは「自分の結果のみ」入力可能
+※ 同一ユーザーによる複数回入力は禁止
+
 ---
 
 ## ■ 6. 試合状態（status）
@@ -81,16 +84,16 @@
 | --------- | ---------------- |
 | pending   | 片方または両方未入力       |
 | confirmed | 両者一致（勝敗 or 引き分け） |
-| cancelled | 無効試合             |
+| cancelled | 無効試合（invalid一致）  |
 | disputed  | 入力不一致            |
 
 ---
 
 ## ■ 7. 判定ロジック
 
-* win / lose が一致 → 勝敗確定
+* win / lose が対応して一致 → 勝敗確定
 * draw 同士 → 引き分け確定
-* invalid 同士 → 無効試合
+* invalid 同士 → cancelled
 * それ以外 → disputed
 
 ---
@@ -101,7 +104,13 @@
 * 勝利：+10
 * 敗北：-10
 * 引き分け：変動なし
-* 適用条件：status = confirmed のみ
+
+### ■ 更新ルール（重要）
+
+* rating更新は「statusがconfirmedに変化した瞬間」に1回のみ実行
+* 同一試合による重複更新は禁止
+* disputed → confirmed に変化した場合のみ更新対象
+* cancelled は更新対象外
 
 ---
 
@@ -109,7 +118,9 @@
 
 * ソート：レーティング降順
 * 表示：上位100人
-* 条件：試合数10以上のみ
+* 条件：
+
+  * confirmed試合数が10以上
 
 ---
 
@@ -122,29 +133,42 @@
 * email
 * password
 * rating（初期1500）
-* match_count
+* match_count（confirmed試合のみ）
 * created_at
+* updated_at
+* is_active
 
 ---
 
 ### matches
 
 * id
-
 * player1_id
-
 * player2_id
-
+* created_by（作成者）
 * player1_result
-
 * player2_result
-  （win / lose / draw / invalid）
-
+* player1_submitted_at
+* player2_submitted_at
 * status
-  （pending / confirmed / cancelled / disputed）
+* winner_id
+* is_rating_applied（重複防止）
+* created_at
+* updated_at
 
-* winner_id（勝敗確定時のみ）
+### ■ 制約
 
+* player1_id != player2_id
+* 各プレイヤーは1回のみ結果入力可能
+
+---
+
+### rating_logs（任意・推奨）
+
+* id
+* user_id
+* match_id
+* change_amount
 * created_at
 
 ---
@@ -161,10 +185,11 @@
 ### 試合
 
 * POST /api/matches
-  → 対戦作成
+  → 対戦作成（created_byにログインユーザー）
 
 * POST /api/matches/:id/result
-  → 結果入力
+  → 自分の結果のみ送信
+  → 1ユーザー1回のみ
 
 ---
 
@@ -189,44 +214,21 @@
 * 認証ユーザーのみ操作可能
 * 他人の試合を編集不可
 * レスポンスが極端に遅くならない
+* 不正入力の防止（自己対戦禁止など）
 
 ---
 
-## ■ 14. 将来拡張
+## ■ 14. 運用ルール
+
+* disputed状態の試合は一定期間後に自動cancelledへ変更（将来対応）
+
+---
+
+## ■ 15. 将来拡張
 
 * QRコードによる対戦作成
 * Eloレーティング導入
 * 不正検知機能
 * フレンド機能
-
----
-
-# 🔥 この仕様書の評価（正直）
-
-これなら👇
-
-* ✔ 実務レベルの設計思考あり
-* ✔ MVPとして現実的に完成可能
-* ✔ 面接で語れる要素あり
-
-👉 **“未経験だけど採用検討ライン”には普通に乗る**
-
----
-
-# ❗最後に重要なこと
-
-この仕様書の価値は👇
-
-👉 「守ること」
-
----
-
-# 次のステップ（ここから本番）
-
-やるべき順番👇
-
-① DB作成（Supabase）
-② API実装
-③ フロント接続
 
 ---
