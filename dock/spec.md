@@ -1,7 +1,3 @@
-いい整理の方向性。ただ「依存関係順」にするなら、**UIやAPIより先に“データ・ルール・ロジック”が来る構造**にしないと破綻する。そこを踏まえて並び替えた修正版を出す。
-
----
-
 # 📄 デュエメイト 仕様書（MVP版・依存関係順）
 
 ---
@@ -31,6 +27,13 @@
 * ランキング表示
 
 ---
+了解。そのフォーマットに合わせて、修正内容を反映した確定版を出す👇
+
+---
+
+了解。そのフォーマットに合わせて、修正内容を反映した確定版を出す👇
+
+---
 
 ## ■ 3. データ設計（最優先）
 
@@ -38,7 +41,7 @@
 
 * id
 * name
-* email
+* email（UNIQUE, NOT NULL）
 * password
 * rating（初期1500）
 * match_count（confirmed試合のみ）
@@ -50,24 +53,34 @@
 
 ### matches
 
-* id
-* player1_id
-* player2_id
-* created_by（作成者）
-* player1_result
-* player2_result
-* player1_submitted_at
-* player2_submitted_at
-* status
-* winner_id
-* is_rating_applied（重複防止）
-* created_at
-* updated_at
+matches
+
+- id
+- player1_id
+- player2_id
+- created_by
+
+- player1_score
+- player2_score
+
+- player1_submitted_at
+- player2_submitted_at
+
+- status（pending / reported / confirmed / disputed / cancelled）
+
+- winner_id（NULL可）
+
+- is_rating_applied
+
+- created_at
+- updated_at
+
+---
 
 #### ■ 制約
 
 * player1_id != player2_id
-* 各プレイヤーは1回のみ結果入力可能
+* 各プレイヤーは1回のみ結果入力可能（アプリ側で制御）
 
 ---
 
@@ -77,9 +90,14 @@
 * user_id
 * match_id
 * change_amount
+* old_rating（推奨）
+* new_rating（推奨）
 * created_at
 
 ---
+
+
+
 
 ## ■ 4. 試合結果入力仕様
 
@@ -273,13 +291,3 @@
 
 👉 **「APIの前にユースケース（操作単位）」が無い**
 
-今は
-データ → ロジック → API
-になってるけど、
-
-本来は
-データ → ロジック → **ユースケース** → API → UI
-
-にすると、開発で迷わなくなる。
-
-必要ならそこも一段階上の設計に引き上げる。
