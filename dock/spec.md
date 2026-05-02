@@ -39,15 +39,13 @@
 
 ### users
 
-* id
-* name
-* email（UNIQUE, NOT NULL）
-* password
-* rating（初期1500）
-* match_count（confirmed試合のみ）
-* created_at
-* updated_at
-* is_active
+- id（auth.users.idと一致）
+- name
+- rating
+- match_count
+- created_at
+- updated_at
+- is_active
 
 ---
 
@@ -60,13 +58,7 @@ matches
 - player2_id
 - created_by
 
-- player1_score
-- player2_score
-
-- player1_submitted_at
-- player2_submitted_at
-
-- status（pending / reported / confirmed / disputed / cancelled）
+- status（pending / confirmed / disputed / cancelled）
 
 - winner_id（NULL可）
 
@@ -77,10 +69,23 @@ matches
 
 ---
 
+## match_results
+match_results
+
+- id
+- match_id
+- user_id
+- result (win / lose / draw / invalid)
+- submitted_at
+
+UNIQUE(match_id, user_id)
+
+---
+
 #### ■ 制約
 
-* player1_id != player2_id
-* 各プレイヤーは1回のみ結果入力可能（アプリ側で制御）
+・UNIQUE(match_id, user_id) によりDBレベルで制約する
+・違反時はエラーを返す
 
 ---
 
@@ -109,7 +114,8 @@ matches
 * invalid（無効試合）
 
 ※ ログインユーザーは「自分の結果のみ」入力可能
-※ 同一ユーザーによる複数回入力は禁止
+・UNIQUE(match_id, user_id) によりDBレベルで制約する
+・違反時はエラーを返す
 
 ---
 
@@ -217,6 +223,8 @@ matches
 6. rating更新後、is_rating_appliedをtrueに更新
 
 ※ 上記処理は1トランザクションで実行する
+・対象matchレコードに対して SELECT ... FOR UPDATE により行ロックを取得する
+・並行リクエスト時でも整合性を保証する
 
 ---
 
